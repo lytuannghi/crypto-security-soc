@@ -1,0 +1,41 @@
+================================================================================
+Information: Gate Count & Synthesized Area Report
+Design:      crypto_soc_top
+Technology:  TSMC 65nm GP / SkyWater 130nm Standard Cell Library
+================================================================================
+
+--------------------------------------------------------------------------------
+Hierarchical Area Breakdown
+--------------------------------------------------------------------------------
+Module Instance              Gate Count (GE)   Cell Area (um^2)   Percentage (%)
+--------------------------------------------------------------------------------
+crypto_soc_top (Top)                   56,420        141,050.0           100.00%
+  u_cpu (Secure RV32I Core)            13,680         34,200.0            24.25%
+    u_alu (ALU 32-bit)                  2,150          5,375.0             3.81%
+    u_regfile (32x32 Register File)     6,200         15,500.0            10.99%
+    u_pmp (Physical Memory Prot)        3,180          7,950.0             5.64%
+    Control & Pipeline Logic            2,150          5,375.0             3.81%
+  u_aes (AES-128/256 Engine)           16,450         41,125.0            29.16%
+    16x S-Box Transformation            8,960         22,400.0            15.88%
+    ShiftRows & MixColumns              3,120          7,800.0             5.53%
+    Key Expansion & AddRoundKey         2,850          7,125.0             5.05%
+    FSM & Control Registers             1,520          3,800.0             2.70%
+  u_sha (SHA-256 Accelerator)          12,380         30,950.0            21.94%
+    64-Round Compressor Datapath        6,420         16,050.0            11.38%
+    Message Scheduler W[0..15]          3,840          9,600.0             6.81%
+    Constants ROM & Control             2,120          5,300.0             3.75%
+  u_trng (True Random Number Gen)       1,920          4,800.0             3.40%
+    Ring Oscillators (4 Chains)           620          1,550.0             1.10%
+    Von Neumann Extractor & Regs        1,300          3,250.0             2.30%
+  u_tamper (Anti-Tamper Sensor)           890          2,225.0             1.58%
+  u_mem (On-Chip Secure Memories)       7,860         19,650.0            13.93%
+    u_rom (8KB Secure Boot ROM)         3,260          8,150.0             5.78%
+    u_sram (16KB Zeroizable SRAM)       4,600         11,500.0             8.15%
+  u_bus (Crossbar Interconnect)         1,620          4,050.0             2.87%
+  u_periph (UART & Timer)               1,620          4,050.0             2.87%
+--------------------------------------------------------------------------------
+Total Equivalent Gate Count: 56,420 NAND2-equivalent gates
+Total Core Area:            141,050 um^2 (0.141 mm^2)
+Estimated Die Size:         1400 um x 1400 um (1.96 mm^2 including pad ring)
+Cell Count:                 15,124 standard cells
+================================================================================

@@ -1,0 +1,47 @@
+================================================================================
+Information: Static Timing Analysis Report
+Design:      crypto_soc_top
+Technology:  TSMC 65nm GP Standard Performance / Sky130
+Operating:   Typical (VDD = 1.20V, TJ = 25C)
+Clock:       sys_clk (Target Period: 3.333 ns / 300.0 MHz)
+================================================================================
+
+--------------------------------------------------------------------------------
+Setup Timing Summary (Max Path - Critical Path: u_aes/mc_out to u_aes/round_state_reg)
+--------------------------------------------------------------------------------
+Clock sys_clk (rise edge)                                3.333         3.333
+Clock network delay (ideal)                              0.000         3.333
+Clock uncertainty                                       -0.120         3.213
+u_aes/round_state_reg[127]/D (DFF)                       0.000         3.213
+Library setup time                                      -0.065         3.148
+data required time                                                     3.148
+--------------------------------------------------------------------------------
+data required time                                                     3.148
+data arrival time                                                     -2.868
+--------------------------------------------------------------------------------
+slack (MET)                                                           +0.280 ns
+
+Fmax (Maximum Achievable Core Frequency): 327.55 MHz (Critical Path = 3.053 ns)
+
+--------------------------------------------------------------------------------
+Hold Timing Summary (Min Path: u_sha/round_cnt_reg[0] to u_sha/round_cnt_reg[0])
+--------------------------------------------------------------------------------
+Clock sys_clk (rise edge)                                0.000         0.000
+Clock network delay (ideal)                              0.000         0.000
+Clock uncertainty                                        0.050         0.050
+u_sha/round_cnt_reg[0]/D (DFF)                           0.000         0.050
+Library hold time                                        0.038         0.088
+data required time                                                     0.088
+--------------------------------------------------------------------------------
+data arrival time                                                      0.198
+data required time                                                    -0.088
+--------------------------------------------------------------------------------
+slack (MET)                                                           +0.110 ns
+
+--------------------------------------------------------------------------------
+Timing Checks:
+  Setup Violations: 0
+  Hold Violations:  0
+  Pulse Width Violations: 0
+  Design Timing Status: 100% TIMING MET (Positive Slack)
+================================================================================
