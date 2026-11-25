@@ -2,9 +2,7 @@
 // File: tb_crypto_soc.v
 // Module: tb_crypto_soc
 // Project: Crypto-Security Enclave SoC
-// Description: Comprehensive Self-Checking Testbench verifying Secure RV32I
-//              Core, PMP, AES-256, SHA-256, TRNG, Anti-Tamper with Zeroization,
-//              and UART communication.
+// Description: FIPS-197 AES-128 & FIPS 180-4 SHA-256 KAT Self-Checking Testbench.
 // =============================================================================
 
 `timescale 1ns / 1ps
@@ -13,18 +11,13 @@ module tb_crypto_soc;
 
     reg        clk;
     reg        rst_n;
-
-    // UART
     wire       uart_tx;
     reg        uart_rx;
-
-    // Tamper & Security Pins
     reg        tamper_mesh;
     reg        glitch_detect;
     wire       sec_alarm;
     wire       trng_pulse;
 
-    // Device Under Test (DUT)
     crypto_soc_top dut (
         .pad_clk          (clk),
         .pad_rst_n        (rst_n),
@@ -36,14 +29,12 @@ module tb_crypto_soc;
         .pad_trng_pulse   (trng_pulse)
     );
 
-    // 100 MHz System Clock (10ns period)
-    always #5 clk = ~clk;
+    always #5 clk = ~clk; // 100 MHz
 
-    // Test tracking
     integer pass_count = 0;
     integer fail_count = 0;
 
-    task test_check(input reg condition, input [255:0] test_name);
+    task test_check(input reg condition, input [80*8-1:0] test_name);
     begin
         if (condition) begin
             $display("[PASS] %0s", test_name);
@@ -55,67 +46,94 @@ module tb_crypto_soc;
     end
     endtask
 
-    // Simulation Stimulus
+    // Real External UART Serial Bit-Stream Decoder (baud_div=2 -> 30 ns/bit)
+    localparam integer UART_BIT_NS = 30;
+    reg [7:0] uart_bytes [0:15];
+    integer   uart_cnt = 0;
+    reg [7:0] rx_byte;
+    integer   b;
+
     initial begin
-        $dumpfile("crypto_soc_waves.vcd");
+        forever begin
+            @(negedge uart_tx);
+            if (rst_n) begin
+                #(UART_BIT_NS / 2);
+                if (uart_tx == 1'b0) begin
+                    for (b = 0; b < 8; b = b + 1) begin
+                        #(UART_BIT_NS);
+                        rx_byte[b] = uart_tx;
+                    end
+                    #(UART_BIT_NS);
+                    if (uart_cnt < 16) begin
+                        uart_bytes[uart_cnt] = rx_byte;
+                        uart_cnt = uart_cnt + 1;
+                    end
+                end
+            end
+        end
+    end
+
+    reg [8*3-1:0] captured_uart;
+
+    initial begin
+        $dumpfile("sim/crypto_soc_waves.vcd");
         $dumpvars(0, tb_crypto_soc);
 
         $display("==================================================================");
-        $display("   CRYPTO-SECURITY ENCLAVE SOC VERIFICATION SUITE                 ");
+        $display("   CRYPTO-SECURITY ENCLAVE SOC VERIFICATION SUITE (KAT VERIFIED)");
         $display("==================================================================");
 
-        // Initial pin state
         clk           = 0;
         rst_n         = 0;
         uart_rx       = 1;
-        tamper_mesh   = 1; // Shield intact (active low attack)
-        glitch_detect = 0; // No voltage/clock glitch
+        tamper_mesh   = 1;
+        glitch_detect = 0;
 
-        // Apply Reset
-        #100;
-        @(negedge clk);
-        rst_n = 1;
-        $display("[SIM] Reset released at %0t ps", $time);
+        #100 @(negedge clk) rst_n = 1;
 
-        // Test 1: RV32I Core Boot
         #500;
         test_check(dut.cpu_pc > 32'h0000_0000, "Test 1: Secure RV32I Instruction Fetch & PC Progression");
 
-        // Test 2: UART Transmission
+        #5000;
+        captured_uart = (uart_cnt >= 3) ? {uart_bytes[0], uart_bytes[1], uart_bytes[2]} : 24'd0;
+        test_check(captured_uart == "SEC", "Test 2: External pad_uart_tx Serial Pin Decoded (\"SEC\")");
+
+        test_check(dut.u_sram.mem[2] === 32'h0000_0077, "Test 3: Secure SRAM Read/Write Integrity (0x77)");
+        test_check(dut.u_trng.random_word !== 32'd0, "Test 4: TRNG Physical Phase Jitter Entropy Active");
+
+        // Exact NIST FIPS-197 Appendix C.1 AES-128 Expected Ciphertext:
+        // CT = 69c4e0d8 6a7b0430 d8cdb780 70b4c55a -> LSB-first words: {5ac5b470, 80b7cdd8, 30047b6a, d8e0c469}
+        test_check(
+            dut.u_aes.block_in === 128'hFFEEDDCC_BBAA9988_77665544_33221100 &&
+            dut.u_aes.cipher_key[127:0] === 128'h0F0E0D0C_0B0A0908_07060504_03020100,
+            "Test 5: AES-128 FIPS-197 KAT Input & Key Loaded"
+        );
+
         #2000;
-        test_check(uart_tx !== 1'bx, "Test 2: Secure Serial UART Communication Active");
+        test_check(
+            dut.u_aes.block_out === 128'h5AC5B470_80B7CDD8_30047B6A_D8E0C469,
+            "Test 6: AES-128 FIPS-197 Ciphertext Exact Match (69c4e0d8..70b4c55a)"
+        );
 
-        // Test 3: Secure SRAM Write/Read
-        test_check(dut.u_sram.mem[2] === 32'h0000_0077, "Test 3: Secure SRAM Read/Write Data Integrity");
+        test_check(
+            dut.u_sha.msg_block[0] === 32'h61626380 && dut.u_sha.msg_block[15] === 32'h00000018,
+            "Test 7: SHA-256 512-bit Padded Block (\"abc\", len=24) Loaded"
+        );
 
-        // Test 4: TRNG Entropy Generation
-        test_check(dut.u_trng.random_word !== 32'd0, "Test 4: TRNG Physical Phase Jitter Entropy Generation");
-
-        // Test 5: AES-256 Block Cipher Encryption
-        #1500;
-        test_check(dut.u_aes.block_in[31:0] === 32'h3243f6a8 &&
-                   dut.u_aes.cipher_key[31:0] === 32'h01010101,
-                   "Test 5: AES-256 Plaintext & 256-bit Key Bus Configuration");
-
-        // Wait for AES rounds to complete (14 rounds * ~1 cycle)
-        #2000;
-        test_check(dut.u_aes.block_out !== 128'd0, "Test 6: AES-256 Iterative Encryption Completion (14 Rounds)");
-
-        // Test 7: SHA-256 Hash Accelerator
-        test_check(dut.u_sha.msg_block[0] === 32'h61626380, "Test 7: SHA-256 512-bit Message Block Loading");
-
-        // Wait for SHA-256 compression (64 rounds)
         #8000;
-        test_check(dut.u_sha.h0 !== 32'h6a09e667, "Test 8: SHA-256 64-Round Compression & Digest Accumulation");
+        test_check(
+            {dut.u_sha.h0, dut.u_sha.h1, dut.u_sha.h2, dut.u_sha.h3,
+             dut.u_sha.h4, dut.u_sha.h5, dut.u_sha.h6, dut.u_sha.h7} ===
+            256'hBA7816BF_8F01CFEA_414140DE_5DAE2223_B00361A3_96177A9C_B410FF61_F20015AD,
+            "Test 8: SHA-256(\"abc\") FIPS 180-4 Digest Exact Match"
+        );
 
-        // Test 9: Active Anti-Tamper Sensor & Emergency Zeroization
         $display("[SIM] Injecting physical tamper attack (Shield Mesh Cut)...");
-        tamper_mesh = 0; // Cut shield mesh
+        tamper_mesh = 0;
         #200;
         test_check(sec_alarm === 1'b1, "Test 9: Active Anti-Tamper Shield Disruption Alarm Triggered");
         test_check(dut.u_sram.mem[2] === 32'd0, "Test 10: Hardware Instant Zeroization Clears Secure SRAM");
 
-        // Final verification summary
         #500;
         $display("==================================================================");
         $display("   VERIFICATION SUMMARY: %0d PASSED, %0d FAILED", pass_count, fail_count);

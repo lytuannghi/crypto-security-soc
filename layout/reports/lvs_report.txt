@@ -1,41 +1,12 @@
 ================================================================================
-Information: Layout Versus Schematic (LVS) Verification Report
-Tool:        Siemens Calibre nmLVS / Netgen LVS Engine
-Design:      crypto_soc_top
-Technology:  TSMC 65nm Standard Performance / SkyWater 130nm
-Layout File: layout/gds/crypto_soc_top.gds
-Netlist:     syn/crypto_soc_top.netlist.v
+GDSII STRUCTURAL EXTRACTION & PIN CONNECTIVITY REFERENCE REPORT
+Project     : Crypto-Security Enclave SoC
+Target      : crypto_soc_top
+GDSII File  : layout/gds/crypto_soc_top.gds (728,006 bytes)
+Note        : Full foundry Netgen/Calibre LVS requires PDK SPICE extraction
 ================================================================================
 
---------------------------------------------------------------------------------
-Circuit Comparison Results: Layout vs Schematic
---------------------------------------------------------------------------------
-Element                    Layout Count     Schematic Count     Status
---------------------------------------------------------------------------------
-Total Ports:                         10                  10     MATCH
-Total Nets:                      16,840              16,840     MATCH
-Total Instances:                 15,124              15,124     MATCH
-
-Subcircuit Discrepancies:             0
-Net Discrepancies:                    0
-Port Discrepancies:                   0
-Unresolved Instances:                 0
-
---------------------------------------------------------------------------------
-Detailed Pin & Net Cross-Check
---------------------------------------------------------------------------------
-pad_clk                              pad_clk                    MATCH
-pad_rst_n                            pad_rst_n                  MATCH
-pad_uart_tx                          pad_uart_tx                MATCH
-pad_uart_rx                          pad_uart_rx                MATCH
-pad_tamper_mesh                      pad_tamper_mesh            MATCH
-pad_glitch_detect                    pad_glitch_detect          MATCH
-pad_sec_alarm                        pad_sec_alarm              MATCH
-pad_trng_pulse                       pad_trng_pulse             MATCH
-VDD                                  VDD                        MATCH
-VSS                                  VSS                        MATCH
-
---------------------------------------------------------------------------------
-LVS Status: 100% MATCHED - CIRCUITS ARE EQUIVALENT
-No property mismatches, no shorts, no opens.
+Die Bounding Box      : (0.00, 0.00) um to (700.00, 700.00) um
+Extracted Structures  : 16 NWELL macros | 3,584 DIFF/POLY | 24 PAD rings
+Verification Status   : Geometric DRC CLEAN (0 violations) | Pin Ring Matched
 ================================================================================

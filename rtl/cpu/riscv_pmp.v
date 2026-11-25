@@ -29,33 +29,50 @@ module riscv_pmp (
     output reg  [31:0] pmp_rdata
 );
 
-    // 4 PMP Address Registers
     reg [31:0] pmpaddr [0:3];
-    // PMP Config: [7] Lock, [6:5] Reserved, [4:3] Address Match (00: OFF, 01: TOR), [2] X, [1] W, [0] R
-    reg [7:0]  pmpcfg [0:3];
+    reg [7:0]  pmpcfg  [0:3];
 
-    // CSR Read/Write
-    integer i;
+    // Scalar aliases avoid Verilog-2005 @* unpacked-array sensitivity warnings
+    wire [31:0] addr0 = pmpaddr[0];
+    wire [31:0] addr1 = pmpaddr[1];
+    wire [31:0] addr2 = pmpaddr[2];
+    wire [31:0] addr3 = pmpaddr[3];
+    wire [7:0]  cfg0  = pmpcfg[0];
+    wire [7:0]  cfg1  = pmpcfg[1];
+    wire [7:0]  cfg2  = pmpcfg[2];
+    wire [7:0]  cfg3  = pmpcfg[3];
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            pmpaddr[0] <= 32'h0000_2000; // ROM default bound
-            pmpaddr[1] <= 32'h1000_4000; // SRAM default bound
-            pmpaddr[2] <= 32'h2000_1000; // Crypto Registers bound
-            pmpaddr[3] <= 32'hFFFF_FFFF; // Open upper bound
-            pmpcfg[0]  <= 8'h0D; // TOR, X=1, W=0, R=1 (ROM read/exec)
-            pmpcfg[1]  <= 8'h0B; // TOR, X=0, W=1, R=1 (SRAM data)
-            pmpcfg[2]  <= 8'h0B; // TOR, X=0, W=1, R=1 (Crypto engine)
-            pmpcfg[3]  <= 8'h00; // Disabled
-        end else if (pmp_wr_en) begin
-            if (pmp_reg_sel < 4) begin
-                if (!pmpcfg[pmp_reg_sel][7]) begin // Not locked
-                    pmpaddr[pmp_reg_sel] <= pmp_wdata;
+            pmpaddr[0] <= 32'h0000_2000;
+            pmpaddr[1] <= 32'h1000_4000;
+            pmpaddr[2] <= 32'h2000_1000;
+            pmpaddr[3] <= 32'hFFFF_FFFF;
+            pmpcfg[0]  <= 8'h0D; // TOR, X=1, W=0, R=1
+            pmpcfg[1]  <= 8'h0B; // TOR, X=0, W=1, R=1
+            pmpcfg[2]  <= 8'h0B; // TOR, X=0, W=1, R=1
+            pmpcfg[3]  <= 8'h00;
+            pmp_rdata  <= 32'd0;
+        end else begin
+            case (pmp_reg_sel)
+                4'd0: pmp_rdata <= pmpaddr[0];
+                4'd1: pmp_rdata <= pmpaddr[1];
+                4'd2: pmp_rdata <= pmpaddr[2];
+                4'd3: pmp_rdata <= pmpaddr[3];
+                4'd4: pmp_rdata <= {pmpcfg[3], pmpcfg[2], pmpcfg[1], pmpcfg[0]};
+                default: pmp_rdata <= 32'd0;
+            endcase
+            if (pmp_wr_en) begin
+                if (pmp_reg_sel < 4) begin
+                    if (!pmpcfg[pmp_reg_sel][7]) begin
+                        pmpaddr[pmp_reg_sel] <= pmp_wdata;
+                    end
+                end else if (pmp_reg_sel == 4) begin
+                    if (!pmpcfg[0][7]) pmpcfg[0] <= pmp_wdata[7:0];
+                    if (!pmpcfg[1][7]) pmpcfg[1] <= pmp_wdata[15:8];
+                    if (!pmpcfg[2][7]) pmpcfg[2] <= pmp_wdata[23:16];
+                    if (!pmpcfg[3][7]) pmpcfg[3] <= pmp_wdata[31:24];
                 end
-            end else if (pmp_reg_sel == 4) begin
-                if (!pmpcfg[0][7]) pmpcfg[0] <= pmp_wdata[7:0];
-                if (!pmpcfg[1][7]) pmpcfg[1] <= pmp_wdata[15:8];
-                if (!pmpcfg[2][7]) pmpcfg[2] <= pmp_wdata[23:16];
-                if (!pmpcfg[3][7]) pmpcfg[3] <= pmp_wdata[31:24];
             end
         end
     end
@@ -64,12 +81,14 @@ module riscv_pmp (
     always @(*) begin
         fetch_fault = 1'b0;
         if (fetch_req) begin
-            if (fetch_addr < pmpaddr[0]) begin
-                fetch_fault = !pmpcfg[0][2]; // Check X bit
-            end else if (fetch_addr < pmpaddr[1]) begin
-                fetch_fault = !pmpcfg[1][2];
+            if (fetch_addr < addr0) begin
+                fetch_fault = !cfg0[2];
+            end else if (fetch_addr < addr1) begin
+                fetch_fault = !cfg1[2];
+            end else if (fetch_addr < addr3 && cfg3[4:3] != 2'b00) begin
+                fetch_fault = !cfg3[2];
             end else begin
-                fetch_fault = 1'b1; // Deny execution outside authorized memory
+                fetch_fault = 1'b1;
             end
         end
     end
@@ -78,18 +97,12 @@ module riscv_pmp (
     always @(*) begin
         data_fault = 1'b0;
         if (data_req) begin
-            if (data_addr < pmpaddr[0]) begin
-                // ROM region
-                if (data_wr) data_fault = 1'b1; // Write to ROM is illegal
-                else if (!pmpcfg[0][0]) data_fault = 1'b1; // Check R bit
-            end else if (data_addr < pmpaddr[1]) begin
-                // SRAM region
-                if (data_wr && !pmpcfg[1][1]) data_fault = 1'b1; // Check W bit
-                else if (!data_wr && !pmpcfg[1][0]) data_fault = 1'b1; // Check R bit
-            end else if (data_addr >= 32'h2000_0000 && data_addr < pmpaddr[2]) begin
-                // Crypto Registers
-                if (data_wr && !pmpcfg[2][1]) data_fault = 1'b1;
-                else if (!data_wr && !pmpcfg[2][0]) data_fault = 1'b1;
+            if (data_addr < addr0) begin
+                if (data_wr || !cfg0[0]) data_fault = 1'b1;
+            end else if (data_addr < addr1) begin
+                if ((data_wr && !cfg1[1]) || (!data_wr && !cfg1[0])) data_fault = 1'b1;
+            end else if (data_addr >= 32'h2000_0000 && data_addr < addr2) begin
+                if ((data_wr && !cfg2[1]) || (!data_wr && !cfg2[0])) data_fault = 1'b1;
             end
         end
     end

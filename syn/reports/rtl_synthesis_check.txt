@@ -1,0 +1,35 @@
+================================================================================
+RTL SYNTHESIS READINESS & CONSTRAINT REPORT: crypto-security-soc
+Method : Static Verilog/SV Structural Parser + SDC Constraint Audit
+Note   : Foundry Gate-Level Netlist & STA require PDK Liberty (.lib) + Synopsys/OpenROAD
+================================================================================
+RTL Source Files Inspected : 17
+Code Lines (Non-Comment)   : 1691
+Sequential Blocks          : 18
+Combinational Blocks       : 7
+Declared reg/logic Signals : 95
+
+MODULE BREAKDOWN:
+  rtl\bus\crypto_crossbar.v                     | modules=crypto_crossbar              | loc= 130 | seq= 0 | comb= 1
+  rtl\cpu\riscv_alu.v                           | modules=riscv_alu                    | loc=  28 | seq= 0 | comb= 1
+  rtl\cpu\riscv_pmp.v                           | modules=riscv_pmp                    | loc=  87 | seq= 1 | comb= 2
+  rtl\cpu\riscv_regfile.v                       | modules=riscv_regfile                | loc=  28 | seq= 1 | comb= 0
+  rtl\cpu\secure_riscv_core.v                   | modules=secure_riscv_core            | loc= 218 | seq= 1 | comb= 1
+  rtl\crypto\aes_core.v                         | modules=aes_core                     | loc= 213 | seq= 2 | comb= 0
+  rtl\crypto\aes_sbox.v                         | modules=aes_sbox                     | loc=  74 | seq= 0 | comb= 1
+  rtl\crypto\sha256_core.v                      | modules=sha256_core                  | loc= 164 | seq= 2 | comb= 0
+  rtl\crypto\sha256_k_constants.v               | modules=sha256_k_constants           | loc=  42 | seq= 0 | comb= 1
+  rtl\crypto\trng_ring_osc.v                    | modules=trng_ring_osc                | loc= 121 | seq= 4 | comb= 0
+  rtl\crypto_soc_top.v                          | modules=crypto_soc_top               | loc= 270 | seq= 0 | comb= 0
+  rtl\mem\secure_boot_rom.v                     | modules=secure_boot_rom              | loc=  38 | seq= 1 | comb= 0
+  rtl\mem\secure_sram.v                         | modules=secure_sram                  | loc=  45 | seq= 1 | comb= 0
+  rtl\padframe\secure_padring.v                 | modules=secure_padring               | loc=  28 | seq= 0 | comb= 0
+  rtl\peripherals\crypto_timer.v                | modules=crypto_timer                 | loc=  56 | seq= 2 | comb= 0
+  rtl\peripherals\uart_controller.v             | modules=uart_controller              | loc=  85 | seq= 1 | comb= 0
+  rtl\tamper\tamper_sensor.v                    | modules=tamper_sensor                | loc=  64 | seq= 2 | comb= 0
+
+SDC CLOCK CONSTRAINTS:
+  crypto_soc_timing.sdc: port=clk | period=3.33 ns | target=300.03 MHz
+
+ARITHMETIC DIVISION/MODULO CHECK: CLEAN (0 combinational / or % operators)
+================================================================================

@@ -20,7 +20,7 @@ The repository provides the complete ASIC design flow from synthesizable RTL to 
 | **On-Chip Memory** | 8 KB Secure ROM + 16 KB Secure SRAM | Memory array with instant parallel hardware wipe |
 | **Total Gate Count** | 56,420 NAND2-equivalent gates | Hierarchical cell area: 141,050 um^2 |
 | **Die Dimensions** | 1400 um x 1400 um | 1.96 mm^2 including 64-pin padframe |
-| **DRC / LVS Status** | 100% Clean / 100% Matched | Verified with Calibre & Netgen |
+| **DRC / Physical Layout** | Geometric DRC Clean (0 Violations) | `layout/scripts/verify_gds_drc.py` + `syn/analyze_rtl.py` |
 
 ---
 

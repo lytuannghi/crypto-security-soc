@@ -45,8 +45,8 @@ module secure_boot_rom #(
         end
     end
 
+    integer i;
     initial begin
-        integer i;
         for (i = 0; i < MEM_DEPTH; i = i + 1) begin
             mem[i] = 32'h00000013; // nop
         end
