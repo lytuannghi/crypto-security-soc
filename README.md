@@ -74,11 +74,11 @@ The repository provides the complete ASIC design flow from synthesizable RTL to 
 
 ## Physical Design & Tape-Out Metrics
 
-The physical design was synthesized and routed targeting standard 65nm CMOS libraries.
+The physical layout was generated for the open-source SkyWater 130nm (`sky130`) layer deck (`layout/scripts/build_layout_crypto_soc.py`).
 
 ### Layout Geometry
 - **Layout File:** `layout/gds/crypto_soc_top.gds`
-- **Core Area:** 141,050 um^2 ($380\mu m \times 380\mu m$)
+- **Core Area:** Floorplan geometry audited in `layout/reports/drc_report.txt` (external Yosys/OpenROAD required for post-layout cell area)
 - **Die Size:** 1400 um x 1400 um (1.96 mm^2)
 - **Active Shielding:** Layer 61 (Metal 5) serpentine shield mesh covering entire core logic
 - **Pad Ring:** 64 wirebond I/O pads with high-voltage ESD clamps
