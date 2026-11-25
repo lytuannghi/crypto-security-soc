@@ -12,13 +12,13 @@ The repository provides the complete ASIC design flow from synthesizable RTL to 
 | :--- | :--- | :--- |
 | **Processor Architecture** | Secure RV32I (32-bit RISC-V) | Multi-cycle core with combinational single-cycle ALU |
 | **Memory Protection** | Hardware PMP Unit (4 Regions) | Top-of-Range (TOR) matching, R/W/X enforcement, Lock bit |
-| **Operating Frequency** | 300.0 MHz (3.333 ns) | Synthesized with positive slack on TSMC 65nm / Sky130 |
+| **Operating Frequency** | 300.0 MHz (3.333 ns) | 300.0 MHz SDC timing budget (`syn/crypto_soc_timing.sdc`, SkyWater 130nm target) |
 | **Block Cipher Engine** | Hardware AES-128 / AES-256 | FIPS 197 compliant, 10/14 iterative rounds, 2.74 Gbps throughput |
 | **Hash Accelerator** | Hardware SHA-256 | FIPS 180-4 compliant, 64-round compression engine, 65 cycles/block |
 | **Random Number Gen** | Physical TRNG | NIST SP 800-90B compliant, 3 ring oscillator chains, Von Neumann debiasing |
 | **Physical Security** | Active Tamper Shield (Metal 5) | Clock/voltage glitch detection + 3.3 ns hardware zeroization |
 | **On-Chip Memory** | 8 KB Secure ROM + 16 KB Secure SRAM | Memory array with instant parallel hardware wipe |
-| **Total Gate Count** | 56,420 NAND2-equivalent gates | Hierarchical cell area: 141,050 um^2 |
+| **RTL Structural Audit** | Clean (`syn/analyze_rtl.py`) | External Yosys/OpenSTA required for gate-level cell count & slack |
 | **Die Dimensions** | 1400 um x 1400 um | 1.96 mm^2 including 64-pin padframe |
 | **DRC / Physical Layout** | Geometric DRC Clean (0 Violations) | `layout/scripts/verify_gds_drc.py` + `syn/analyze_rtl.py` |
 
@@ -84,20 +84,12 @@ The physical design was synthesized and routed targeting standard 65nm CMOS libr
 - **Pad Ring:** 64 wirebond I/O pads with high-voltage ESD clamps
 - **Clock Tree:** Symmetrical H-tree clock distribution network (Clock Skew < 35 ps)
 - **DRC Verification:** 0 violations across 22 design rules
-- **LVS Verification:** 100% net, device, and port match against gate-level netlist
+- **LVS / Port Check:** GDSII geometry audited cleanly; external Magic/Netgen required for SPICE extraction & LVS
 
-### Synthesis & Static Timing Analysis (STA)
-- **Target Frequency:** 300.0 MHz ($T = 3.333\text{ ns}$)
-- **Setup Slack:** **+0.280 ns** (Timing closure achieved)
-- **Hold Slack:** **+0.110 ns**
-- **Maximum Frequency ($F_{\max}$):** 327.55 MHz
-- **Equivalent Gate Count Breakdown:**
-  - AES-128/256 Block Cipher Engine: 16,450 gates (29.2%)
-  - Secure RV32I Processor + PMP: 13,680 gates (24.3%)
-  - SHA-256 Hash Accelerator: 12,380 gates (21.9%)
-  - On-Chip Memories: 7,860 gates (13.9%)
-  - TRNG, Anti-Tamper & Peripherals: 6,050 gates (10.7%)
-  - **Total:** 56,420 NAND2-equivalent gates
+### RTL Synthesis Readiness & SDC Audit
+- **Target Frequency:** 300.0 MHz ($T = 3.333	ext{ ns}$, `syn/crypto_soc_timing.sdc`)
+- **Structural RTL Check:** Verified via `syn/analyze_rtl.py` (0 combinational `/` or `%` operators)
+- **Note:** Foundry gate count and post-synthesis STA slack require external Yosys/OpenSTA.
 
 ---
 
